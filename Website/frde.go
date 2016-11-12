@@ -1,11 +1,9 @@
 package main
 
 import (
-	"io/ioutil"
 	"net/http"
 	"html/template"
-	"regexp"
-	"errors"
+	"encoding/json"
 )
 
 var WebsitePath = "Website/"
@@ -13,100 +11,37 @@ var WebsitePath = "Website/"
 var pagesPath = WebsitePath+"pages/"
 var templatesPath = WebsitePath+"templates/"
 
-var templates = template.Must(template.ParseFiles(templatesPath+"edit.html", templatesPath+"view.html"))
+var templates = template.Must(template.ParseFiles(templatesPath+"admin.html"))
 
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
-
-type Page struct {
-	Title string
-	Body []byte
+type channel struct{
+	Id int
+	Name string
+	Active bool
 }
 
-func (p *Page) save() error {
-	filename := p.Title + ".txt"
-	return ioutil.WriteFile(pagesPath+filename, p.Body, 0600)
-}
 
-func getTitle(w http.ResponseWriter, r *http.Request) (string, error){
-	m := validPath.FindStringSubmatch(r.URL.Path)
 
-	if m == nil{
-		http.NotFound(w, r)
-		return "", errors.New("Invalid Page Title")
-	}
-
-	return m[2], nil
-
-}
-
-func loadPage(title string) (*Page, error){
-	filename := title+".txt"
-	body, err := ioutil.ReadFile(pagesPath+filename)
-	if err !=nil {
-		return nil, err
-	}
-	return &Page{Title:title, Body:body}, nil
-}
-
-func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	err := templates.ExecuteTemplate(w, tmpl + ".html", p)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
-
+func getJson(url string, target interface{}) error{
+	r, err := http.Get(url)
 	if err != nil{
-		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
-		return
+		return err;
 	}
-	renderTemplate(w, "view", p)
+	defer r.Body.Close()
+
+	return json.NewDecoder(r.Body).Decode(target)
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
+func adminHandler(w http.ResponseWriter, r *http.Request){
+	var channels []channel
+	getJson("http://localhost:8081/channels/", &channels)
+	templates.ExecuteTemplate(w, "admin.html", channels)
 
-	if err != nil {
-		p = &Page{Title: title}
-	}
-
-	renderTemplate(w, "edit", p)
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
-	body := r.FormValue("body")
-
-	p := &Page{Title:title, Body: []byte(body)}
-	err := p.save()
-
-	if err != nil{
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/view/"+title, http.StatusFound)
-}
-
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request){
-		m := validPath.FindStringSubmatch(r.URL.Path)
-		if m == nil{
-			http.NotFound(w,r)
-			return
-		}
-		fn(w,r,m[2])
-	}
-}
 
 
 func main(){
-	http.HandleFunc("/view/", makeHandler(viewHandler))
-	http.HandleFunc("/edit/", makeHandler(editHandler))
-	http.HandleFunc("/save/", makeHandler(saveHandler))
+	http.HandleFunc("/admin/", adminHandler)
 
 	http.ListenAndServe(":8080", nil)
 }
