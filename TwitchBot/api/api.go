@@ -46,7 +46,7 @@ func Ini(){
 	createHandlers()
 }
 
-// Create teh handlers for listening to api requestds
+// Create the handlers for listening to api requestds
 func createHandlers(){
 	fmt.Println("API - Creating handlers")
 
