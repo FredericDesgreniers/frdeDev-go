@@ -24,7 +24,7 @@ func main(){
 func runBot() (err error){
 
 	ircConnection, err := irc.CreateIrcConnection(&botIrcInfo)
-
+	defer ircConnection.CloseConnection()
 	api.SetIrcConnection(ircConnection)
 	go api.Ini()
 	if err != nil{
