@@ -32,11 +32,8 @@ func runBot() (err error){
 	}
 
 	ircConnection.Authenticate()
-
-	ircConnection.JoinChannel("winter_squirrel")
-
+	ircConnection.JoinActiveChannels()
 	for{
-
 		line, err := ircConnection.GetMessage()
 
 		if err != nil{
