@@ -63,24 +63,34 @@ func (ircConnection *IrcConnection) Authenticate() {
 }
 // Join an irc channel
 func (ircConnection *IrcConnection) JoinChannel(channel string){
-	ircConnection.SendMessage("JOIN %s", "#"+channel)
 
 	if channelInfo, ok := ircConnection.Channels[channel]; ok{
+		if channelInfo.Active {
+			return
+		}
 		channelInfo.Active = true
 	}else{
 		ircConnection.Channels[channel] = &ChannelInfo{channel, true}
 	}
 
+	ircConnection.SendMessage("JOIN %s", "#"+channel)
+
+
 
 }
 //Leave an irc channel
 func (ircConnection *IrcConnection) LeaveChannel(channel string){
-	ircConnection.SendMessage("PART %s", "#"+channel)
 	if channelInfo, ok := ircConnection.Channels[channel]; ok{
+		if !channelInfo.Active{
+			return
+		}
 		channelInfo.Active = false
 	}else{
 		ircConnection.Channels[channel] = &ChannelInfo{channel, false}
 	}
+
+	ircConnection.SendMessage("PART %s", "#"+channel)
+
 
 }
 
