@@ -8,7 +8,12 @@ import (
 	"errors"
 )
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+var WebsitePath = "Website/"
+
+var pagesPath = WebsitePath+"pages/"
+var templatesPath = WebsitePath+"templates/"
+
+var templates = template.Must(template.ParseFiles(templatesPath+"edit.html", templatesPath+"view.html"))
 
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
@@ -19,7 +24,7 @@ type Page struct {
 
 func (p *Page) save() error {
 	filename := p.Title + ".txt"
-	return ioutil.WriteFile(filename, p.Body, 0600)
+	return ioutil.WriteFile(pagesPath+filename, p.Body, 0600)
 }
 
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error){
@@ -36,7 +41,7 @@ func getTitle(w http.ResponseWriter, r *http.Request) (string, error){
 
 func loadPage(title string) (*Page, error){
 	filename := title+".txt"
-	body, err := ioutil.ReadFile(filename)
+	body, err := ioutil.ReadFile(pagesPath+filename)
 	if err !=nil {
 		return nil, err
 	}
