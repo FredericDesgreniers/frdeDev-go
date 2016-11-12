@@ -23,6 +23,9 @@ func SetChannelStatus(w http.ResponseWriter, r *http.Request) {
 	if m == nil{
 		http.NotFound(w, r)
 	}
+	if(len(m) < 2){
+		return
+	}
 	name := strings.ToLower(m[2])
 	command := m[3]
 
