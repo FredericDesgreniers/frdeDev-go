@@ -42,16 +42,8 @@ func SetChannelStatus(w http.ResponseWriter, r *http.Request) {
 func GetChannelsStatus(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 
-	query, _ := ircConnection.Database.Prepare("SELECT * FROM channels")
-	defer query.Close()
-	sfmt, _ := query.Query()
-	var l []irc.ChannelInfo
-	for(sfmt.Next()){
-		var channel irc.ChannelInfo
-		sfmt.Scan(&channel.Name, &channel.Active)
-		l = append(l, channel)
-	}
-	json.NewEncoder(w).Encode(l)
+
+	json.NewEncoder(w).Encode(ircConnection.Database.GetChannels())
 }
 
 // Initialize api web stuff
