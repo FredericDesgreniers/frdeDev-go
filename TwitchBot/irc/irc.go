@@ -83,6 +83,10 @@ func (ircConnection *IrcConnection) LeaveChannel(channel string){
 	}
 
 }
+
+func (ircConnection *IrcConnection) CloseConnection(){
+	ircConnection.connection.Close()
+}
 //Create an irc connection
 // should be called first
 func CreateIrcConnection(info *IrcConnectionInfo) (*IrcConnection, error){
