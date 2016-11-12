@@ -6,20 +6,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"database/sql"
+	"../dbc"
 )
-import _ "github.com/go-sql-driver/mysql"
+import (
+	_ "github.com/go-sql-driver/mysql"
+)
 
 
 
-// ChannelInfo store the status of a channel on the irc
-// Name being the channel name and Active being if the channel is currently being listened too
-type ChannelInfo struct{
-	// Name of the channel
-	Name string
-	// If the channel is being listened too
-	Active bool
-}
 // IrcConnectionInfo store information about an irc connection
 type IrcConnectionInfo struct{
 	// irc server name address
@@ -37,18 +31,17 @@ type IrcConnection struct{
 	reader     *bufio.Reader
 	Info       *IrcConnectionInfo
 
-	Database   *sql.DB
+	Database   *dbc.DatabaseConnection
 }
 
 func (irc *IrcConnection) JoinActiveChannels(){
-	var name string
-
-	qeury, _ := irc.Database.Query("SELECT name FROM channels WHERE Active = 1")
-	defer qeury.Close()
-	for(qeury.Next()){
-		qeury.Scan(&name)
-		irc.SendMessage("JOIN #"+name)
+	channels :=irc.Database.GetActiveChannels()
+	for _, c := range (*channels){
+		if c != nil{
+			irc.SendMessage("JOIN #"+c.Name)
+		}
 	}
+
 }
 
 //Send a message using the printF format
@@ -83,28 +76,21 @@ func (ircConnection *IrcConnection) Authenticate() {
 // Join an irc channel
 func (ircConnection *IrcConnection) JoinChannel(channel string){
 
-	query, err := ircConnection.Database.Prepare("SELECT Active FROM channels WHERE Name = ?")
-	if err !=nil{
-		fmt.Println(err.Error())
-		return
-	}
-	defer query.Close()
-	var active bool
+	channels := ircConnection.Database.GetChannel(channel)
 
-	err = query.QueryRow(channel).Scan(&active)
-	if err != nil{
-		iQeury, _ := ircConnection.Database.Prepare("INSERT INTO channels VALUES(? , ?)")
-		defer iQeury.Close()
-		iQeury.Exec(channel, true)
 
+	if len(*channels) == 0{
+		ircConnection.Database.InsertChannel(&dbc.Channel{0, channel, true})
 		fmt.Printf("Added new channel to database: #%s\n", channel)
 	}else{
-		if(active){
+		ch := (*channels)[0]
+
+		if(ch.Active){
 			fmt.Printf("Channel #%s was already joined\n", channel)
 			return
 		}else{
-			update, _ := ircConnection.Database.Prepare("UPDATE channels SET Active = ? WHERE Name = ?")
-			update.Exec(true, channel)
+			(*channels)[0].Active = true
+			ircConnection.Database.UpdateChannel((*channels)[0])
 		}
 	}
 
@@ -118,23 +104,30 @@ func (ircConnection *IrcConnection) JoinChannel(channel string){
 //Leave an irc channel
 func (ircConnection *IrcConnection) LeaveChannel(channel string){
 
-	query, _ := ircConnection.Database.Prepare("SELECT Active FROM channels WHERE Name = ?")
-	defer query.Close()
-	var active bool
+	channels := ircConnection.Database.GetChannel(channel)
 
-	query.QueryRow(channel).Scan(&active)
 
-	if(!active){
-		fmt.Printf("Irc has never joined #%s\n", channel)
+	if len(*channels) == 0{
+		ircConnection.Database.InsertChannel(&dbc.Channel{0, channel, false})
+		fmt.Printf("Added new channel to database: #%s\n", channel)
 		return
+	}else{
+		ch := (*channels)[0]
+
+		if(!ch.Active){
+			fmt.Printf("Channel #%s is alrady non-active\n", channel)
+			return
+		}else{
+			(*channels)[0].Active = false
+			ircConnection.Database.UpdateChannel((*channels)[0])
+		}
 	}
 
-	update, _ := ircConnection.Database.Prepare("UPDATE channels SET Active = ? WHERE Name = ?")
-	update.Exec(false, channel)
 
+	fmt.Printf("Channel #%s has been left\n", channel)
 	ircConnection.SendMessage("PART %s", "#"+channel)
 
-	fmt.Printf("Left channel %s\n", channel)
+
 
 }
 // Close the irc connection.
@@ -148,11 +141,8 @@ func CreateIrcConnection(info *IrcConnectionInfo) (*IrcConnection, error){
 	if err != nil{
 		return &IrcConnection{}, err
 	}
-	sqldb, err := sql.Open("mysql", "root@/frde")
-	if err != nil{
-		panic(err.Error())
-	}
-	ircC := &IrcConnection{conn, bufio.NewReader(conn), info,sqldb}
+
+	ircC := &IrcConnection{conn, bufio.NewReader(conn), info,dbc.CreateDatabaseConnection("root@/frde")}
 
 
 	return ircC, nil
