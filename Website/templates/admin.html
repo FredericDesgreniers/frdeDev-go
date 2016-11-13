@@ -1,98 +1,44 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 
+<link type="text/css" rel="stylesheet" href="/resources/admin.css">
+
 <script>
-    function checkBoxChange(cb){
-        var name = cb.getAttribute("name");
-
-        var url = "/admin/channel/";
-
-        var action = cb.checked?"join":"leave";
-
-        $.post("/admin/channel/", {channel: name, action:action}, function(result){
+    function startChannel(button){
+        $.post("/admin/channel/", {channel: button.getAttribute("name"), action:"join"}, function(result){
             console.log(result)
+            button.setAttribute("onclick", "stopChannel(this)");
+            button.innerHTML = "Leave";
+        });
+    }
+    function stopChannel(button){
+        $.post("/admin/channel/", {channel: button.getAttribute("name"), action:"leave"}, function(result){
+            console.log(result)
+            button.setAttribute("onclick", "startChannel(this)");
+            button.innerHTML = "Join";
         });
     }
 
 </script>
 
-
-<h1>Admin control panel</h1>
+<div class="section">
+    <h1>Twitch Bot</h1>
 <ul>
 {{ range $i, $channel := . }}
+    <li class="channel">
+        <button type="button" name="{{ $channel.Name }}" onClick="{{ if $channel.Active }}stopChannel(this){{ else }}startChannel(this){{ end }}">{{ if $channel.Active }}Leave{{ else }}Join{{ end }}</button>
+        <div class="channelName">{{ $channel.Name }} </div>
 
-    <label class="switch">
-        <input type="checkbox" name="{{ $channel.Name }}" onclick="checkBoxChange(this)" {{ if $channel.Active }}checked{{ end }}>
-        <div class="slider round"></div>
-    </label>
-    {{ $channel.Name }}
+
+    </li>
     <br \>
-
+    <br \>
 {{ end }}
 </ul>
 
+</div>
 
 <style>
 
-    /* FROM http://www.w3schools.com/howto/howto_css_switch.asp */
-
-    /* The switch - the box around the slider */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 34px;
-    }
-
-    /* Hide default HTML checkbox */
-    .switch input {display:none;}
-
-    /* The slider */
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        -webkit-transition: .4s;
-        transition: .4s;
-    }
-
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 26px;
-        width: 26px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        -webkit-transition: .4s;
-        transition: .4s;
-    }
-
-    input:checked + .slider {
-        background-color: #2196F3;
-    }
-
-    input:focus + .slider {
-        box-shadow: 0 0 1px #2196F3;
-    }
-
-    input:checked + .slider:before {
-        -webkit-transform: translateX(26px);
-        -ms-transform: translateX(26px);
-        transform: translateX(26px);
-    }
-
-    /* Rounded sliders */
-    .slider.round {
-        border-radius: 34px;
-    }
-
-    .slider.round:before {
-        border-radius: 50%;
-    }
 
 
 </style>
