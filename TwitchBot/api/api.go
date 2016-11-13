@@ -59,7 +59,9 @@ func createHandlers(){
 
 	http.HandleFunc("/channels/", GetChannelsStatus)
 
-	error := http.ListenAndServe(":8081", nil)
+	
+
+	error := http.ListenAndServe("localhost:8081", nil)
 
 	fmt.Println(error.Error())
 }
