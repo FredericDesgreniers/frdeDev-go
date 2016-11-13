@@ -1,9 +1,27 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script>
+    function checkBoxChange(cb){
+        var name = cb.getAttribute("name");
+
+        var url = "/admin/channel/";
+
+        var action = cb.checked?"join":"leave";
+
+        $.post("/admin/channel/", {channel: name, action:action}, function(result){
+            console.log(result)
+        });
+    }
+
+</script>
+
+
 <h1>Admin control panel</h1>
 <ul>
 {{ range $i, $channel := . }}
 
     <label class="switch">
-        <input type="checkbox" {{ if $channel.Active }}checked{{ end }}>
+        <input type="checkbox" name="{{ $channel.Name }}" onclick="checkBoxChange(this)" {{ if $channel.Active }}checked{{ end }}>
         <div class="slider round"></div>
     </label>
     {{ $channel.Name }}
@@ -11,6 +29,7 @@
 
 {{ end }}
 </ul>
+
 
 <style>
 
