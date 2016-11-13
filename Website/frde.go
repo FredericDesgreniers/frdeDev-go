@@ -77,6 +77,6 @@ func main(){
 	//TODO add authentication for admin subpath
 	http.HandleFunc("/admin/panel/", adminHandler)
 	http.HandleFunc("/admin/channel/", channelHandler)
-
+	http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("resources"))))
 	http.ListenAndServe(":8080", nil)
 }
