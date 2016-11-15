@@ -15,7 +15,7 @@ var botIrcInfo = irc.IrcConnectionInfo{"irc.twitch.tv", 6667, "frde_bot", "oauth
 
 
 //REGEX to parse chat messages
-var chatMsgRegex = regexp.MustCompile("(:[a-zA-Z_!@.]+) PRIVMSG (#[a-zA-Z_]+) (:[a-zA-Z!_@ ]+)")
+var chatMsgRegex = regexp.MustCompile("(:[a-zA-Z1-9_!@.]+) PRIVMSG (#[a-zA-Z1-9_]+) (:[a-zA-Z1-9!_@ ]+)")
 
 func main(){
 
