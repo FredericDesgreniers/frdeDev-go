@@ -32,6 +32,8 @@ type IrcConnection struct{
 	Info       *IrcConnectionInfo
 
 	Database   *dbc.DatabaseConnection
+
+	Cm *CommandManager
 }
 
 func (irc *IrcConnection) JoinActiveChannels(){
@@ -142,7 +144,7 @@ func CreateIrcConnection(info *IrcConnectionInfo) (*IrcConnection, error){
 		return &IrcConnection{}, err
 	}
 
-	ircC := &IrcConnection{conn, bufio.NewReader(conn), info,dbc.CreateDatabaseConnection("root@/frde")}
+	ircC := &IrcConnection{conn, bufio.NewReader(conn), info,dbc.CreateDatabaseConnection("root@/frde"), &CommandManager{}}
 
 
 	return ircC, nil
