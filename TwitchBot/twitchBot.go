@@ -7,20 +7,32 @@ import (
 	"strings"
 	"regexp"
 	"time"
+	"os"
+	"encoding/json"
 )
 
+type Config struct{
+	Token string
+}
 
-
-var botIrcInfo = irc.IrcConnectionInfo{"irc.twitch.tv", 6667, "frde_bot", "oauth:qmsz9bc54rqc5429r05oomjsvhbzkm"}
+var botIrcInfo = irc.IrcConnectionInfo{"irc.twitch.tv", 6667, "frde_bot", ""}
 
 
 //REGEX to parse chat messages
 var chatMsgRegex = regexp.MustCompile("(:[a-zA-Z1-9_!@.]+) PRIVMSG (#[a-zA-Z1-9_]+) (:[a-zA-Z1-9!_@ ]+)")
 
 func main(){
+	file, _ := os.Open("irc.json")
+	decoder := json.NewDecoder(file)
+	conf := Config{}
+	err := decoder.Decode(&conf)
+	if err != nil{
+		panic(err.Error())
+	}
 
-
-	err := runBot();
+	botIrcInfo.Password = conf.Token
+	fmt.Println("using token "+conf.Token)
+	err = runBot();
 	if err != nil{
 		fmt.Println(err.Error())
 	}
@@ -51,6 +63,7 @@ func runBot() (err error){
 		if err != nil{
 			return err
 		}
+		fmt.Println(line)
 		//match with chat messages
 		m := chatMsgRegex.FindStringSubmatch(line)
 		if len(m)>3 {
